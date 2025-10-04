@@ -1,4 +1,4 @@
-// ---- FIREBASE SETUP ----
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyBSyElf7Kfyt0OMgjOiRJQrbiLjp-blBRk",
   authDomain: "theboutiquefashionhub-c89b5.firebaseapp.com",
@@ -9,75 +9,71 @@ const firebaseConfig = {
   measurementId: "G-DR716P0M3V"
 };
 
-// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// Detect if on admin page
 const isAdminPage = window.location.pathname.includes('admin.html');
+let selectedCategory = "all";
 
-// Load products from Firestore
-async function loadProducts() {
-  const container = document.getElementById('products');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const snapshot = await db.collection("products").get();
-  snapshot.forEach(doc => {
-    const p = doc.data();
-    const div = document.createElement('div');
-    div.className = 'card';
-    div.innerHTML = `
-      <img src="${p.image}" alt="${p.name}">
-      <h3>${p.name}</h3>
-      <p>$${p.price}</p>
-      <p>${p.description}</p>
-      ${isAdminPage ? `<button onclick="deleteProduct('${doc.id}')">Delete</button>` : ''}
-    `;
-    container.appendChild(div);
+// Load products
+function loadProducts() {
+  db.collection("products").get().then(snapshot => {
+    let products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const filtered = selectedCategory === "all" ? products : products.filter(p => p.category === selectedCategory);
+    const container = document.getElementById('products');
+    if (!container) return;
+    container.innerHTML = '';
+    filtered.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `
+        <img src="${p.image}" alt="${p.name}">
+        <h3>${p.name}</h3>
+        <p>$${p.price}</p>
+        <p>${p.description}</p>
+        ${isAdminPage ? `<button onclick="deleteProduct('${p.id}')">Delete</button>` : ''}
+      `;
+      container.appendChild(div);
+    });
   });
 }
 
-// Add new product (Admin only)
+// Nav category filter
+document.querySelectorAll('nav a[data-category]').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    selectedCategory = btn.getAttribute('data-category');
+    loadProducts();
+  });
+});
+
+// Admin add product
 const form = document.getElementById('productForm');
 if (form) {
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener('submit', e => {
     e.preventDefault();
     const name = document.getElementById('name').value;
     const price = document.getElementById('price').value;
     const category = document.getElementById('category').value.toLowerCase();
     const description = document.getElementById('description').value;
     const file = document.getElementById('image').files[0];
-
     if (!file) return;
 
-    // Upload image to Firebase Storage
-    const storageRef = storage.ref().child('uploads/' + Date.now() + '-' + file.name);
-    await storageRef.put(file);
-    const url = await storageRef.getDownloadURL();
-
-    // Save product to Firestore
-    await db.collection("products").add({
-      name,
-      price,
-      category,
-      description,
-      image: url,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    const storageRef = storage.ref('uploads/' + file.name);
+    storageRef.put(file).then(snapshot => snapshot.ref.getDownloadURL()).then(url => {
+      db.collection("products").add({ name, price, category, description, image: url }).then(() => {
+        form.reset();
+        loadProducts();
+      });
     });
-
-    form.reset();
-    loadProducts();
   });
 }
 
-// Delete product (Admin only)
-async function deleteProduct(id) {
-  if (!confirm("Delete this product?")) return;
-  await db.collection("products").doc(id).delete();
-  loadProducts();
+// Delete product
+function deleteProduct(id) {
+  if (!confirm('Delete this product?')) return;
+  db.collection("products").doc(id).delete().then(() => loadProducts());
 }
 
-// Initial load
 loadProducts();
