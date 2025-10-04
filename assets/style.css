@@ -18,7 +18,6 @@ form button { background:#333; color:#fff; border:none; cursor:pointer; }
   flex-wrap: wrap;
   margin-top: 20px;
 }
-
 .contact-options a {
   padding: 10px 20px;
   border-radius: 8px;
@@ -27,31 +26,13 @@ form button { background:#333; color:#fff; border:none; cursor:pointer; }
   font-weight: bold;
   transition: transform 0.2s;
 }
-
 .contact-options a:hover { transform: scale(1.05); }
-
 .contact-button { background:#0072C6; }
 .whatsapp-button { background:#25D366; }
 .gpay-button { background:#FFCC00; color:#000; }
-
-.shop-address {
-  margin-top: 30px;
-  background: #f1f1f1;
-  padding: 15px;
-  border-radius: 8px;
-}
-
-.shop-address h3 {
-  margin-bottom: 10px;
-  color: #333;
-}
-
-.shop-address p {
-  margin: 4px 0;
-  color: #555;
-}
-
-/* Existing styles ... */
+.shop-address { margin-top: 30px; background: #f1f1f1; padding: 15px; border-radius: 8px; }
+.shop-address h3 { margin-bottom: 10px; color: #333; }
+.shop-address p { margin: 4px 0; color: #555; }
 
 .whatsapp-button {
   position: fixed;
@@ -67,7 +48,4 @@ form button { background:#333; color:#fff; border:none; cursor:pointer; }
   z-index:1000;
   transition: transform 0.2s;
 }
-.whatsapp-button:hover {
-  transform: scale(1.1);
-}
-
+.whatsapp-button:hover { transform: scale(1.1); }
