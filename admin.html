@@ -1,85 +1,37 @@
-const isAdminPage = window.location.pathname.includes('admin.html');
-let selectedCategory = "all";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seller Panel</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">FashionHub</div>
+    <nav>
+      <a href="index.html">Back to Shop</a>
+    </nav>
+  </header>
 
-// Load products from localStorage
-function loadProducts() {
-  const products = JSON.parse(localStorage.getItem('products')) || [];
-  const filtered = selectedCategory === "all" 
-    ? products 
-    : products.filter(p => p.category === selectedCategory);
+  <main>
+    <h2>Seller Panel</h2>
+    <form id="productForm" enctype="multipart/form-data">
+      <input type="text" id="name" placeholder="Product Name" required>
+      <input type="number" id="price" placeholder="Price" required>
+      <select id="category" required>
+        <option value="new">New Collection</option>
+        <option value="sarees">Sarees</option>
+      </select>
+      <textarea id="description" placeholder="Description" required></textarea>
+      <input type="file" id="image" accept="image/*" required>
+      <button type="submit">Add Product</button>
+    </form>
 
-  const container = document.getElementById('products');
-  if (!container) return;
-  container.innerHTML = '';
+    <h3>Existing Products</h3>
+    <div id="products" class="grid"></div>
+  </main>
 
-  filtered.forEach(p => {
-    const div = document.createElement('div');
-    div.className = 'card';
-    div.innerHTML = `
-      <img src="${p.image}" alt="${p.name}">
-      <h3>${p.name}</h3>
-      <p>$${p.price}</p>
-      <p>${p.description}</p>
-      ${isAdminPage ? `<button onclick="deleteProduct(${p.id})">Delete</button>` : ''}
-    `;
-    container.appendChild(div);
-  });
-}
-
-// Nav buttons
-document.querySelectorAll('nav a[data-category]').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    selectedCategory = btn.getAttribute('data-category');
-    loadProducts();
-  });
-});
-
-// Admin add product
-const form = document.getElementById('productForm');
-if (form) {
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const name = document.getElementById('name').value;
-    const price = document.getElementById('price').value;
-    const category = document.getElementById('category').value.toLowerCase();
-    const description = document.getElementById('description').value;
-    const file = document.getElementById('image').files[0];
-    if (!file) return;
-
-    // --- Cloudinary Upload ---
-    const url = `https://api.cloudinary.com/v1_1/djvqw68em/image/upload`;
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "theboutiquefashionhub");
-
-    const res = await fetch(url, { method: "POST", body: formData });
-    const data = await res.json();
-
-    if (data.secure_url) {
-      const products = JSON.parse(localStorage.getItem('products')) || [];
-      products.push({
-        id: Date.now(),
-        name, price, category, description,
-        image: data.secure_url // Cloudinary hosted URL
-      });
-      localStorage.setItem('products', JSON.stringify(products));
-      form.reset();
-      loadProducts();
-    } else {
-      alert("Upload failed: " + JSON.stringify(data));
-    }
-  });
-}
-
-// Delete product
-function deleteProduct(id) {
-  if (!confirm('Delete this product?')) return;
-  let products = JSON.parse(localStorage.getItem('products')) || [];
-  products = products.filter(p => p.id !== id);
-  localStorage.setItem('products', JSON.stringify(products));
-  loadProducts();
-}
-
-loadProducts();
+  <script src="assets/script.js"></script>
+</body>
+</html>
