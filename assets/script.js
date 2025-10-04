@@ -44,18 +44,26 @@ if(form){
     const price = document.getElementById('price').value;
     const category = document.getElementById('category').value.toLowerCase();
     const description = document.getElementById('description').value;
-    const file = document.getElementById('image').files[0];
-    if(!file) return;
+    const image = document.getElementById('imageUrl').value; // use Cloudinary URL
 
-    const uploadPath = 'uploads/' + file.name;
+    if(!image) {
+      alert('Please upload an image first!');
+      return;
+    }
+
     const products = JSON.parse(localStorage.getItem('products')) || [];
     products.push({
       id: Date.now(),
-      name, price, category, description,
-      image: uploadPath
+      name, 
+      price, 
+      category, 
+      description,
+      image
     });
+
     localStorage.setItem('products', JSON.stringify(products));
     form.reset();
+    document.getElementById('imageUrl').value = '';
     loadProducts();
   });
 }
@@ -69,4 +77,5 @@ function deleteProduct(id){
   loadProducts();
 }
 
+// Initial load
 loadProducts();
