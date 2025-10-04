@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Seller Panel</title>
 <link rel="stylesheet" href="assets/style.css">
-
-<!-- Cloudinary JS Widget -->
-<script src="https://widget.cloudinary.com/v2.0/global/all.js" type="text/javascript"></script>
 </head>
 <body>
 <header>
@@ -19,7 +16,7 @@
 
 <main>
   <h2>Seller Panel</h2>
-  <form id="productForm">
+  <form id="productForm" enctype="multipart/form-data">
     <input type="text" id="name" placeholder="Product Name" required>
     <input type="number" id="price" placeholder="Price" required>
     <select id="category" required>
@@ -27,11 +24,8 @@
       <option value="sarees">Sarees</option>
     </select>
     <textarea id="description" placeholder="Description" required></textarea>
-
-    <!-- Cloudinary upload button -->
-    <input type="hidden" id="imageUrl" required>
-    <button type="button" id="uploadButton">Upload Image</button>
-
+    <input type="file" id="image" accept="image/*" required>
+    <button type="button" id="uploadBtn">Upload Image</button>
     <button type="submit">Add Product</button>
   </form>
 
@@ -40,26 +34,5 @@
 </main>
 
 <script src="assets/script.js"></script>
-<script>
-  // Initialize Cloudinary Upload Widget
-  const uploadButton = document.getElementById('uploadButton');
-  const imageUrlInput = document.getElementById('imageUrl');
-
-  const myWidget = cloudinary.createUploadWidget({
-    cloudName: 'YOUR_CLOUD_NAME', // replace with your Cloudinary cloud name
-    uploadPreset: 'YOUR_UPLOAD_PRESET', // replace with your upload preset
-    multiple: false
-  }, (error, result) => {
-    if (!error && result && result.event === "success") {
-      console.log('Uploaded Image URL:', result.info.secure_url);
-      imageUrlInput.value = result.info.secure_url; // save URL for form submission
-      alert('Image uploaded successfully!');
-    }
-  });
-
-  uploadButton.addEventListener('click', () => {
-    myWidget.open();
-  });
-</script>
 </body>
 </html>
