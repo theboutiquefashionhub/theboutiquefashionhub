@@ -1,92 +1,107 @@
-const isAdminPage = window.location.pathname.includes('admin.html');
+// Detect if on admin page
+const isAdminPage = window.location.pathname.includes("admin.html");
 let selectedCategory = "all";
 
 // Load products from localStorage
 function loadProducts() {
-  const products = JSON.parse(localStorage.getItem('products')) || [];
-  const filtered = selectedCategory === "all" ? products : products.filter(p => p.category === selectedCategory);
+  const products = JSON.parse(localStorage.getItem("products")) || [];
+  const filtered =
+    selectedCategory === "all"
+      ? products
+      : products.filter((p) => p.category === selectedCategory);
 
-  const container = document.getElementById('products');
+  const container = document.getElementById("products");
   if (!container) return;
 
-  container.innerHTML = '';
-  filtered.forEach(p => {
-    const div = document.createElement('div');
-    div.className = 'card';
+  container.innerHTML = "";
+
+  filtered.forEach((p) => {
+    const div = document.createElement("div");
+    div.className = "card";
     div.innerHTML = `
-      <img src="${p.image}" alt="${p.name}">
-      <h3>${p.name}</h3>
+      <img src="${p.image}" alt="${p.name}" style="max-width:150px">
+      <h4>${p.name}</h4>
       <p>$${p.price}</p>
       <p>${p.description}</p>
-      ${isAdminPage ? `<button onclick="deleteProduct(${p.id})">Delete</button>` : ''}
+      ${isAdminPage ? `<button onclick="deleteProduct(${p.id})">Delete</button>` : ""}
     `;
     container.appendChild(div);
   });
 }
 
-// Nav buttons
-document.querySelectorAll('nav a[data-category]').forEach(btn => {
-  btn.addEventListener('click', (e) => {
+// Nav category filter
+document.querySelectorAll("nav a[data-category]").forEach((btn) => {
+  btn.addEventListener("click", (e) => {
     e.preventDefault();
-    selectedCategory = btn.getAttribute('data-category');
+    selectedCategory = btn.getAttribute("data-category");
     loadProducts();
   });
 });
 
 // Admin add product
-const form = document.getElementById('productForm');
+const form = document.getElementById("productForm");
+console.log("Form loaded?", form);
+
 if (form) {
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    console.log("Form submitted!");
 
-    const name = document.getElementById('name').value;
-    const price = document.getElementById('price').value;
-    const category = document.getElementById('category').value.toLowerCase();
-    const description = document.getElementById('description').value;
-    const file = document.getElementById('image').files[0];
-    if (!file) return;
+    const name = document.getElementById("name")?.value;
+    const price = document.getElementById("price")?.value;
+    const category = document.getElementById("category")?.value.toLowerCase();
+    const description = document.getElementById("description")?.value;
+    const file = document.getElementById("image")?.files[0];
 
-    // --- Cloudinary Upload ---
-    const url = `https://api.cloudinary.com/v1_1/djvqw68em/image/upload`;
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "theboutiquefashionhub");
+    console.log({ name, price, category, description, file });
+
+    if (!file) {
+      alert("Please select an image");
+      return;
+    }
 
     try {
+      // Cloudinary Upload
+      const url = `https://api.cloudinary.com/v1_1/djvqw68em/image/upload`;
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "theboutiquefashionhub");
+
       const res = await fetch(url, { method: "POST", body: formData });
       const data = await res.json();
 
+      console.log("Cloudinary response:", data);
+
       if (data.secure_url) {
-        const products = JSON.parse(localStorage.getItem('products')) || [];
+        const products = JSON.parse(localStorage.getItem("products")) || [];
         products.push({
           id: Date.now(),
           name,
           price,
           category,
           description,
-          image: data.secure_url // Cloudinary hosted URL
+          image: data.secure_url, // Cloudinary hosted URL
         });
-        localStorage.setItem('products', JSON.stringify(products));
+        localStorage.setItem("products", JSON.stringify(products));
         form.reset();
         loadProducts();
       } else {
         alert("Upload failed: " + JSON.stringify(data));
       }
     } catch (err) {
-      console.error("Cloudinary upload error:", err);
-      alert("Upload failed. Check console for details.");
+      console.error("Upload error:", err);
+      alert("Error uploading image. Check console for details.");
     }
   });
 }
 
 // Delete product
 function deleteProduct(id) {
-  if (!confirm('Delete this product?')) return;
-  let products = JSON.parse(localStorage.getItem('products')) || [];
-  products = products.filter(p => p.id !== id);
-  localStorage.setItem('products', JSON.stringify(products));
+  if (!confirm("Delete this product?")) return;
+  let products = JSON.parse(localStorage.getItem("products")) || [];
+  products = products.filter((p) => p.id !== id);
+  localStorage.setItem("products", JSON.stringify(products));
   loadProducts();
 }
 
-// Initial load
 loadProducts();
