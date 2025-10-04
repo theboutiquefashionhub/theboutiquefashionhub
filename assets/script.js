@@ -11,7 +11,10 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const storage = firebase.storage();
+
+// Replace with your Cloudinary details
+const CLOUD_NAME = "djvqw68em";
+const UPLOAD_PRESET = "theboutiquefashionhub"; // unsigned preset you already created
 
 const isAdminPage = window.location.pathname.includes('admin.html');
 let selectedCategory = "all";
@@ -60,13 +63,25 @@ if (form) {
     const file = document.getElementById('image').files[0];
     if (!file) return;
 
-    const storageRef = storage.ref('uploads/' + file.name);
-    storageRef.put(file).then(snapshot => snapshot.ref.getDownloadURL()).then(url => {
-      db.collection("products").add({ name, price, category, description, image: url }).then(() => {
-        form.reset();
-        loadProducts();
-      });
-    });
+    // Upload to Cloudinary
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+      method: "POST",
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      const imageUrl = data.secure_url;
+      return db.collection("products").add({ name, price, category, description, image: imageUrl });
+    })
+    .then(() => {
+      form.reset();
+      loadProducts();
+    })
+    .catch(err => console.error("Upload error:", err));
   });
 }
 
