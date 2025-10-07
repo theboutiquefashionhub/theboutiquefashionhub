@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Seller Panel</title>
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/style.css" />
 </head>
 <body>
   <header>
@@ -16,15 +16,16 @@
 
   <main>
     <h2>Seller Panel</h2>
+
     <form id="productForm" enctype="multipart/form-data">
-      <input type="text" id="name" placeholder="Product Name" required>
-      <input type="number" id="price" placeholder="Price" required>
+      <input type="text" id="name" placeholder="Product Name" required />
+      <input type="number" id="price" placeholder="Price" required />
       <select id="category" required>
         <option value="new">New Collection</option>
         <option value="sarees">Sarees</option>
       </select>
       <textarea id="description" placeholder="Description" required></textarea>
-      <input type="file" id="image" accept="image/*" required>
+      <input type="file" id="image" accept="image/*" required />
       <button type="submit">Add Product</button>
     </form>
 
@@ -32,6 +33,12 @@
     <div id="products" class="grid"></div>
   </main>
 
+  <!-- ================= FIREBASE SDKs ================= -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+  <!-- ================= YOUR SCRIPT ================= -->
   <script src="assets/script.js"></script>
 </body>
 </html>
