@@ -1,151 +1,164 @@
 // ===============================
-// 🔥 Initialize Firebase
+// Firebase Config
 // ===============================
-const firebaseConfig = {
-  apiKey: "AIzaSyBSyElf7Kfyt0OMgjOiRJQrbiLjp-blBRk",
-  authDomain: "theboutiquefashionhub-c89b5.firebaseapp.com",
-  projectId: "theboutiquefashionhub-c89b5",
-  storageBucket: "theboutiquefashionhub-c89b5.firebasestorage.app",
-  messagingSenderId: "849139458829",
-  appId: "1:849139458829:web:b58bc003634729a5a1c644",
-  measurementId: "G-DR716P0M3V",
-};
+if (!firebase.apps.length) {
+  const firebaseConfig = {
+    apiKey: "AIzaSyBSyElf7Kfyt0OMgjOiRJQrbiLjp-blBRk",
+    authDomain: "theboutiquefashionhub-c89b5.firebaseapp.com",
+    projectId: "theboutiquefashionhub-c89b5",
+    storageBucket: "theboutiquefashionhub-c89b5.firebasestorage.app",
+    messagingSenderId: "849139458829",
+    appId: "1:849139458829:web:b58bc003634729a5a1c644",
+    measurementId: "G-DR716P0M3V"
+  };
+  firebase.initializeApp(firebaseConfig);
+}
 
-firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const auth = firebase.auth();
 
 // ===============================
-// 🌐 Detect Admin Page
+// Detect page
 // ===============================
-const isAdminPage = window.location.pathname.includes("admin.html");
-let selectedCategory = "all";
+const isAdminPage = location.pathname.includes("admin.html");
+const isLoginPage = location.pathname.includes("login.html");
 
 // ===============================
-// 🛍️ Load Products (Realtime)
+// Login Page
 // ===============================
-function loadProducts() {
-  const container = document.getElementById("products");
-  if (!container) return;
-  container.innerHTML = "Loading products...";
+if (isLoginPage) {
+  const form = document.getElementById("loginForm");
+  const registerLink = document.getElementById("registerLink");
 
-  let query = db.collection("products");
-  if (selectedCategory !== "all") {
-    query = query.where("category", "==", selectedCategory);
-  }
+  form?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
 
-  // Realtime listener
-  query.orderBy("createdAt", "desc").onSnapshot(
-    (snapshot) => {
-      container.innerHTML = "";
-      if (snapshot.empty) {
-        container.innerHTML = "<p>No products found.</p>";
-        return;
-      }
+    auth.signInWithEmailAndPassword(email, password)
+      .then(() => (location.href = "admin.html"))
+      .catch((err) => alert("Login failed: " + err.message));
+  });
 
-      snapshot.forEach((doc) => {
-        const p = doc.data();
-        const div = document.createElement("div");
-        div.className = "card";
-        div.innerHTML = `
-          <img src="${p.image}" alt="${p.name}">
-          <h4>${p.name}</h4>
-          <p>$${p.price}</p>
-          <p>${p.description}</p>
-          ${
-            isAdminPage
-              ? `<button onclick="deleteProduct('${doc.id}')">Delete</button>`
-              : ""
-          }
-        `;
-        container.appendChild(div);
-      });
-    },
-    (error) => {
-      console.error("Error loading products:", error);
-      container.innerHTML = "<p>Error loading products.</p>";
-    }
-  );
+  registerLink?.addEventListener("click", (e) => {
+    e.preventDefault();
+    const email = prompt("Enter new seller email:");
+    const password = prompt("Enter password (min 6 chars):");
+    if (!email || !password) return;
+
+    auth.createUserWithEmailAndPassword(email, password)
+      .then(() => alert("Seller account created!"))
+      .catch((err) => alert("Error: " + err.message));
+  });
 }
 
 // ===============================
-// 🧭 Category Filter
+// Admin Page (Protected)
 // ===============================
-document.querySelectorAll("nav a[data-category]").forEach((btn) => {
-  btn.addEventListener("click", (e) => {
-    e.preventDefault();
-    selectedCategory = btn.getAttribute("data-category");
-    loadProducts();
+if (isAdminPage) {
+  auth.onAuthStateChanged((user) => {
+    if (!user) location.href = "login.html";
   });
-});
 
-// ===============================
-// ➕ Add Product (Admin)
-// ===============================
-const form = document.getElementById("productForm");
+  const logoutBtn = document.getElementById("logoutBtn");
+  logoutBtn?.addEventListener("click", () => auth.signOut());
 
-if (form) {
-  form.addEventListener("submit", async (e) => {
+  const form = document.getElementById("productForm");
+
+  form?.addEventListener("submit", async (e) => {
     e.preventDefault();
-
-    const name = document.getElementById("name").value.trim();
-    const price = parseFloat(document.getElementById("price").value);
-    const category = document.getElementById("category").value.toLowerCase();
-    const description = document.getElementById("description").value.trim();
+    const name = document.getElementById("name").value;
+    const price = document.getElementById("price").value;
+    const category = document.getElementById("category").value;
+    const description = document.getElementById("description").value;
     const file = document.getElementById("image").files[0];
 
     if (!file) return alert("Please select an image");
 
     try {
       // Upload to Cloudinary
-      const cloudinaryURL = "https://api.cloudinary.com/v1_1/djvqw68em/image/upload";
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", "theboutiquefashionhub");
-
-      const res = await fetch(cloudinaryURL, { method: "POST", body: formData });
+      const cloudUrl = "https://api.cloudinary.com/v1_1/djvqw68em/image/upload";
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("upload_preset", "theboutiquefashionhub");
+      const res = await fetch(cloudUrl, { method: "POST", body: fd });
       const data = await res.json();
-      const imageUrl = data.secure_url || data.url;
 
-      if (!imageUrl) {
-        console.error("Cloudinary error:", data);
-        return alert("Image upload failed");
-      }
-
-      // Save to Firestore
       await db.collection("products").add({
         name,
-        price,
+        price: parseFloat(price),
         category,
         description,
-        image: imageUrl,
+        image: data.secure_url,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       });
 
-      alert("✅ Product added successfully!");
       form.reset();
+      loadProducts();
     } catch (err) {
-      console.error("Error:", err);
-      alert("Failed to add product. Check console for details.");
+      alert("Error uploading: " + err.message);
     }
   });
-}
 
-// ===============================
-// ❌ Delete Product (Admin)
-// ===============================
-async function deleteProduct(id) {
-  if (!confirm("Delete this product?")) return;
-
-  try {
-    await db.collection("products").doc(id).delete();
-    alert("🗑️ Product deleted!");
-  } catch (err) {
-    console.error("Delete error:", err);
-    alert("Failed to delete product.");
+  async function loadProducts() {
+    const snapshot = await db.collection("products").orderBy("createdAt", "desc").get();
+    const container = document.getElementById("products");
+    container.innerHTML = "";
+    snapshot.forEach((doc) => {
+      const p = doc.data();
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <img src="${p.image}" alt="${p.name}">
+        <h4>${p.name}</h4>
+        <p>${p.description}</p>
+        <p><strong>$${p.price}</strong></p>
+        <button onclick="deleteProduct('${doc.id}')">Delete</button>
+      `;
+      container.appendChild(div);
+    });
   }
+
+  window.deleteProduct = async (id) => {
+    if (confirm("Delete this product?")) {
+      await db.collection("products").doc(id).delete();
+      loadProducts();
+    }
+  };
+
+  loadProducts();
 }
 
 // ===============================
-// ▶️ Start
+// Customer Index Page
 // ===============================
-loadProducts();
+if (!isAdminPage && !isLoginPage) {
+  const productsDiv = document.getElementById("products");
+  async function loadProducts(category = "all") {
+    let query = db.collection("products").orderBy("createdAt", "desc");
+    if (category !== "all") query = query.where("category", "==", category);
+    const snapshot = await query.get();
+    productsDiv.innerHTML = "";
+    snapshot.forEach((doc) => {
+      const p = doc.data();
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <img src="${p.image}" alt="${p.name}">
+        <h4>${p.name}</h4>
+        <p>${p.description}</p>
+        <p><strong>$${p.price}</strong></p>
+      `;
+      productsDiv.appendChild(div);
+    });
+  }
+
+  document.querySelectorAll("nav a[data-category]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      loadProducts(btn.getAttribute("data-category"));
+    });
+  });
+
+  loadProducts();
+}
